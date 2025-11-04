@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple Runner</title>
+<title>Run Stick - Score Temps</title>
 <style>
 body {
   margin: 0;
   overflow: hidden;
-  background: #87ceeb;
+  background: black;
   font-family: sans-serif;
 }
 
@@ -17,25 +17,21 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: linear-gradient(to top, #87ceeb 0%, #a0d8f1 100%);
 }
 
 #player {
   position: absolute;
-  bottom: 50px;
-  left: 50px;
   width: 50px;
   height: 50px;
-  background: #ff3333;
+  background: red;
   border-radius: 5px;
 }
 
 .obstacle {
   position: absolute;
-  bottom: 50px;
   width: 50px;
   height: 50px;
-  background: #333;
+  background: gray;
 }
 
 #score {
@@ -51,10 +47,25 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: red;
+  color: white;
   font-size: 36px;
-  display: none;
   text-align: center;
+  display: none;
+}
+
+#restartBtn {
+  display: none;
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 15px 30px;
+  font-size: 24px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
 }
 </style>
 </head>
@@ -62,7 +73,8 @@ body {
 <div id="game">
   <div id="player"></div>
   <div id="score">0</div>
-  <div id="message">Game Over<br>Appuyez pour recommencer</div>
+  <div id="message">Game Over</div>
+  <button id="restartBtn">Recommencer</button>
 </div>
 
 <script>
@@ -70,25 +82,40 @@ const game = document.getElementById('game');
 const player = document.getElementById('player');
 const scoreEl = document.getElementById('score');
 const messageEl = document.getElementById('message');
+const restartBtn = document.getElementById('restartBtn');
 
 let obstacles = [];
 let score = 0;
 let gameOverFlag = false;
 let jump = false;
 let jumpHeight = 0;
-const jumpSpeed = 8;
-const gravity = 4;
+const jumpSpeed = 12;
+const gravity = 6;
+const groundOffset = 100; 
 
-// --- Créer obstacle ---
+// Temps pour score
+let timeElapsed = 0;
+let scoreInterval;
+
+// --- Création obstacles ---
 function createObstacle() {
   const obs = document.createElement('div');
   obs.classList.add('obstacle');
+
+  const typeColor = ['#555', '#777', '#999', '#aaa'];
+  const type = typeColor[Math.floor(Math.random()*typeColor.length)];
+  obs.style.background = type;
+
+  obs.style.width = 50 + Math.floor(Math.random()*50) + 'px';
+  obs.style.height = 50 + Math.floor(Math.random()*50) + 'px';
+  obs.style.bottom = groundOffset + 'px';
   obs.style.left = window.innerWidth + 'px';
+
   game.appendChild(obs);
   obstacles.push(obs);
 }
 
-// --- Boucle de jeu ---
+// --- Boucle jeu ---
 function gameLoop() {
   if(gameOverFlag) return;
 
@@ -100,41 +127,58 @@ function gameLoop() {
     jumpHeight -= gravity;
     if(jumpHeight < 0) jumpHeight = 0;
   }
-  player.style.bottom = 50 + jumpHeight + 'px';
+  player.style.bottom = groundOffset + jumpHeight + 'px';
 
   // Déplacer obstacles
   for(let i = obstacles.length -1; i >=0; i--){
     const obs = obstacles[i];
     let x = parseFloat(obs.style.left);
-    x -= 8; // vitesse
+    x -= 8;
     obs.style.left = x + 'px';
 
-    // Collision
     const playerRect = player.getBoundingClientRect();
     const obsRect = obs.getBoundingClientRect();
+
     if(playerRect.left < obsRect.right &&
        playerRect.right > obsRect.left &&
        playerRect.bottom > obsRect.top &&
        playerRect.top < obsRect.bottom){
-      gameOver();
+      endGame();
     }
 
-    // Supprimer obstacles hors écran
-    if(x + 50 < 0){
+    if(x + parseFloat(obs.style.width) < 0){
       obs.remove();
       obstacles.splice(i,1);
-      score++;
-      scoreEl.innerText = score;
     }
   }
 
   requestAnimationFrame(gameLoop);
 }
 
-// --- Game Over ---
-function gameOver(){
+// --- Score par temps ---
+function startScore() {
+  scoreInterval = setInterval(() => {
+    timeElapsed++;
+    score += timeElapsed; // cumul 1+2+3+...
+    scoreEl.innerText = score;
+
+    // Changement fond et personnage
+    if(score >= 150){
+      document.body.style.background = 'white';
+      player.style.background = 'black';
+    } else {
+      document.body.style.background = 'black';
+      player.style.background = 'red';
+    }
+  }, 1000);
+}
+
+// --- Game over ---
+function endGame(){
   gameOverFlag = true;
+  clearInterval(scoreInterval);
   messageEl.style.display = 'block';
+  restartBtn.style.display = 'block';
 }
 
 // --- Redémarrer ---
@@ -142,45 +186,45 @@ function restartGame(){
   obstacles.forEach(o => o.remove());
   obstacles = [];
   score = 0;
+  timeElapsed = 0;
   scoreEl.innerText = score;
   jumpHeight = 0;
   jump = false;
-  player.style.bottom = '50px';
+  player.style.bottom = groundOffset + 'px';
   messageEl.style.display = 'none';
+  restartBtn.style.display = 'none';
   gameOverFlag = false;
+  document.body.style.background = 'black';
+  player.style.background = 'red';
+  gameLoop();
+  startScore();
 }
 
 // --- Contrôles ---
 document.addEventListener('keydown', e => {
-  if(e.code === 'Space'){
-    if(!jump && !gameOverFlag) jump = true;
-  }
+  if(e.code === 'Space' && !jump && !gameOverFlag) jump = true;
 });
 
 document.addEventListener('click', () => {
-  if(gameOverFlag){
-    restartGame();
-  } else if(!jump){
-    jump = true;
-  }
+  if(!jump && !gameOverFlag) jump = true;
 });
 
 document.addEventListener('touchstart', e => {
   e.preventDefault();
-  if(gameOverFlag){
-    restartGame();
-  } else if(!jump){
-    jump = true;
-  }
+  if(!jump && !gameOverFlag) jump = true;
 });
 
-// --- Génération obstacles ---
+restartBtn.addEventListener('click', restartGame);
+
+// --- Obstacles ---
 setInterval(() => {
   if(!gameOverFlag) createObstacle();
-}, 2000);
+}, 1500);
 
-// --- Lancer le jeu ---
+// --- Initialisation ---
+player.style.bottom = groundOffset + 'px';
 gameLoop();
+startScore();
 </script>
 </body>
 </html>

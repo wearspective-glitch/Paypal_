@@ -1,25 +1,267 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="fr">
 <head>
-    <title>Table Tennis</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tableau de bord — Solde</title>
+  <style>
+    :root {
+      --bg:#f3f4f9;
+      --card:#ffffff;
+      --muted:#8b8f98;
+      --accent:#2b6cff;
+      --shadow:0 6px 20px rgba(20,20,40,0.06);
+      font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    html,body {
+      height:100%;
+      margin:0;
+      background:linear-gradient(180deg,#f7f8fc 0%,#f3f4f9 100%);
+      color:#111;
+      overflow-x:hidden;
+    }
+
+    .wrap {
+      max-width:420px;
+      margin:18px auto 160px;
+      padding:18px;
+    }
+
+    .balance-card {
+      background:var(--card);
+      border-radius:14px;
+      padding:16px 18px;
+      box-shadow:var(--shadow)
+    }
+
+    .bal-top {display:flex;align-items:center;gap:10px}
+    .logo-circle{width:28px;height:28px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    .logo-circle img{width:100%;height:100%;object-fit:cover;}
+    .balance-info{display:flex;flex-direction:column;}
+    .balance-amount{font-size:34px;font-weight:700;margin-top:4px;line-height:1;}
+    .balance-sub{font-size:13px;color:var(--muted);margin-top:2px;}
+    h2{margin:18px 0 8px 0;font-size:16px}
+    .activity{display:flex;flex-direction:column;gap:12px}
+    .txn{background:var(--card);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+    .txn .meta{display:flex;gap:12px;align-items:center}
+    .profile-pic{width:36px;height:36px;border-radius:50%;overflow:hidden;}
+    .profile-pic img{width:100%;height:100%;object-fit:cover;}
+    .txn .desc{display:flex;flex-direction:column}
+    .txn .desc .who{font-weight:600}
+    .txn .desc .when{font-size:12px;color:var(--muted)}
+    .amount{font-weight:700;margin-right:8px;font-size:13px;text-align:right;}
+    .amount.green{color:seagreen}
+    .amount.gray{color:var(--muted)}
+
+    /* Bloc bas fixe */
+    .bottom-menu {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      padding: 20px 16px;
+      border-radius: 16px 16px 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 16px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 -3px 20px rgba(20,20,40,0.08);
+      text-align:center;
+      z-index:5;
+    }
+
+    .bottom-menu .buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px; /* espace entre les deux boutons */
+      padding: 0 8px; /* <-- marge intérieure pour éviter qu’ils touchent les bords */
+    }
+
+    .bottom-menu .buttons button {
+      flex: 1 1 48%;
+      padding:12px 0;
+      border-radius:28px;
+      font-weight:700;
+      font-size:14px;
+      cursor:pointer;
+      border:0;
+      background:#000;
+      color:#fff;
+    }
+
+    .bottom-menu .buttons .receive {
+      white-space: normal;
+      line-height: 1.2;
+      max-width: 100%;
+      text-align: center;
+    }
+
+    .bottom-menu .links {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 8px;
+    }
+
+    .bottom-menu .links a {
+      text-decoration: none;
+      color: #111;
+      transition: 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .bottom-menu .links a img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      margin-bottom: 4px;
+      object-fit: cover;
+    }
+
+    .bottom-menu .links a:hover { color: var(--accent); }
+
+    /* modal */
+    #contactModal{
+      display:none;
+      position:fixed;
+      top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.5);
+      align-items:center;justify-content:center;
+      z-index:10;overflow:auto
+    }
+    #contactModal .modal-content{
+      background:white;padding:24px;border-radius:12px;
+      max-width:400px;width:90%;position:relative;
+      box-shadow:var(--shadow);
+    }
+    #contactModal h3{margin-top:0;text-align:center;}
+    #contactModal label{display:block;margin-top:10px;font-weight:600;}
+    #contactModal input{width:100%;padding:8px;margin-top:4px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box;}
+    #contactModal button{margin-top:12px;padding:10px 18px;border:none;border-radius:8px;background:#2b6cff;color:white;font-weight:700;cursor:pointer;width:100%;}
+    #contactModal .close-btn{background:#aaa;margin-top:8px;}
+    #selectedContact{margin-top:12px;padding:8px;border:1px solid #ccc;border-radius:6px;background:#f7f7f7;}
+  </style>
 </head>
 <body>
-    <canvas id="game" width="640" height="480"></canvas>
-    <script>
-        var canvas = document.getElementById("game");
-        var ctx = canvas.getContext("2d");
-        function paddle(x, y, width, height) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-            this.speedModifier = 0;
-            this.hasCollidedWith = function(ball) {
-                var paddleLeftWall = this.x;
-                var paddleRightWall = this.x + this.width;
-                var paddleTopWall = this.y;
-                var paddleBottomWall = this.y + this.height;
-                if(ball.x > paddleLeftWall 
-                    && ball.x < paddleRightWall
-                    && ball.y > paddleTopWall
-                    && ball.y < paddleBottomWall) {
+<div class="wrap">
+  <div class="balance-card">
+    <div class="bal-top">
+      <div class="logo-circle">
+        <img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2477.jpg?v=1762027810" alt="Logo PayPal">
+      </div>
+      <div class="balance-info">
+        <div class="small">Solde PayPal</div>
+        <div id="balance" class="balance-amount">750 000,00 €</div>
+        <div class="balance-sub">Disponible</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Activité récente</h2>
+  <div class="activity" id="activityList"></div>
+</div>
+
+<!-- Bloc bas fixe -->
+<div class="bottom-menu">
+  <div class="buttons">
+    <button class="pay" id="payerBtn">Payer</button>
+    <button class="receive">Recevoir des<br>Paiements</button>
+  </div>
+  <div class="links">
+    <a href="#"><img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2485.jpg?v=1762057479" alt="Accueil">Accueil</a>
+    <a href="#"><img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2485_5fb5771c-36c5-4916-b7a4-420fa68bf3d3.jpg?v=1762057532" alt="Clients">Clients</a>
+    <a href="#"><img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2485_685c231e-dc09-410f-97f1-60779ed13b73.jpg?v=1762057580" alt="Menu">Menu</a>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="contactModal">
+  <div class="modal-content">
+    <h3>Payer un contact</h3>
+    <label for="contactInput">Nom, Nom d’utilisateur, Email :</label>
+    <input type="text" id="contactInput" placeholder="Nom, Nom d’utilisateur, Email">
+    <button id="addContactBtn">Ajouter contact</button>
+    <div id="selectedContact">Aucun contact sélectionné</div>
+    <label for="amount">Somme à payer (€) :</label>
+    <input type="number" id="amount" placeholder="Entrer un montant">
+    <button id="payBtn">Payer</button>
+    <button class="close-btn" id="closeModal">Fermer</button>
+  </div>
+</div>
+
+<script>
+let balance = 750000.00;
+const transactions = [
+  {who:'Louisvuitton', date:'2 nov. 2025', note:'envoyé - reçu', amount:-18000.00, style:'gray'},
+  {who:'Sarah750199', date:'2 nov 2025', note:'envoyé - reçu', amount:-1000.00, style:'gray'}
+];
+
+function fmt(n){return n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
+const balanceEl = document.getElementById('balance');
+balanceEl.textContent = fmt(balance);
+const activityList = document.getElementById('activityList');
+function renderTransactions(){
+  activityList.innerHTML='';
+  transactions.forEach(tx=>{
+    const node=document.createElement('div');
+    node.className='txn';
+    node.innerHTML=`
+      <div class="meta">
+        <div class="profile-pic"><img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2487.jpg?v=1762058304" alt="User"></div>
+        <div class="desc">
+          <div class="who">${tx.who}</div>
+          <div class="when">${tx.date}</div>
+          <div class="small" style="margin-top:6px">${tx.note}</div>
+        </div>
+      </div>
+      <div class="amount ${tx.style}">${tx.amount>=0?'+':''}${fmt(tx.amount)}</div>`;
+    activityList.appendChild(node);
+  });
+}
+renderTransactions();
+
+// Modal logique
+const modal = document.getElementById('contactModal');
+const payerBtn = document.getElementById('payerBtn');
+const closeModal = document.getElementById('closeModal');
+const contactInput = document.getElementById('contactInput');
+const addContactBtn = document.getElementById('addContactBtn');
+const selectedContact = document.getElementById('selectedContact');
+const payBtn = document.getElementById('payBtn');
+const amountInput = document.getElementById('amount');
+const contacts = [];
+
+payerBtn.addEventListener('click',()=>{modal.style.display='flex';});
+closeModal.addEventListener('click',()=>{modal.style.display='none';});
+
+addContactBtn.addEventListener('click',()=>{
+  const value=contactInput.value.trim();
+  if(value){contacts.push(value);selectedContact.textContent=value;contactInput.value='';}
+});
+
+payBtn.addEventListener('click',()=>{
+  const montant=parseFloat(amountInput.value);
+  if(!selectedContact.textContent || selectedContact.textContent==='Aucun contact sélectionné'){alert('Veuillez saisir un contact.');return;}
+  if(!montant || montant<=0){alert('Veuillez entrer une somme valide.');return;}
+  if(montant>balance){alert('Solde insuffisant !');return;}
+  balance -= montant;
+  balanceEl.textContent = fmt(balance);
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('fr-FR');
+  transactions.unshift({who:selectedContact.textContent, date:dateStr, note:'Paiement effectué', amount:-montant, style:'gray'});
+  renderTransactions();
+  amountInput.value='';
+  selectedContact.textContent='Aucun contact sélectionné';
+  modal.style.display='none';
+});
+</script>
+</body>
+</html>

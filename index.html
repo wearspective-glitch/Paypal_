@@ -1,267 +1,211 @@
-<!doctype html>
+ <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tableau de bord — Solde</title>
-  <style>
-    :root {
-      --bg:#f3f4f9;
-      --card:#ffffff;
-      --muted:#8b8f98;
-      --accent:#2b6cff;
-      --shadow:0 6px 20px rgba(20,20,40,0.06);
-      font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
-
-    html,body {
-      height:100%;
-      margin:0;
-      background:linear-gradient(180deg,#f7f8fc 0%,#f3f4f9 100%);
-      color:#111;
-      overflow-x:hidden;
-    }
-
-    .wrap {
-      max-width:420px;
-      margin:18px auto 160px;
-      padding:18px;
-    }
-
-    .balance-card {
-      background:var(--card);
-      border-radius:14px;
-      padding:16px 18px;
-      box-shadow:var(--shadow)
-    }
-
-    .bal-top {display:flex;align-items:center;gap:10px}
-    .logo-circle{width:28px;height:28px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-    .logo-circle img{width:100%;height:100%;object-fit:cover;}
-    .balance-info{display:flex;flex-direction:column;}
-    .balance-amount{font-size:34px;font-weight:700;margin-top:4px;line-height:1;}
-    .balance-sub{font-size:13px;color:var(--muted);margin-top:2px;}
-    h2{margin:18px 0 8px 0;font-size:16px}
-    .activity{display:flex;flex-direction:column;gap:12px}
-    .txn{background:var(--card);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
-    .txn .meta{display:flex;gap:12px;align-items:center}
-    .profile-pic{width:36px;height:36px;border-radius:50%;overflow:hidden;}
-    .profile-pic img{width:100%;height:100%;object-fit:cover;}
-    .txn .desc{display:flex;flex-direction:column}
-    .txn .desc .who{font-weight:600}
-    .txn .desc .when{font-size:12px;color:var(--muted)}
-    .amount{font-weight:700;margin-right:8px;font-size:13px;text-align:right;}
-    .amount.green{color:seagreen}
-    .amount.gray{color:var(--muted)}
-
-    /* Bloc bas fixe */
-    .bottom-menu {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff;
-      padding: 20px 16px;
-      border-radius: 16px 16px 0 0;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      font-weight: 700;
-      font-size: 16px;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 -3px 20px rgba(20,20,40,0.08);
-      text-align:center;
-      z-index:5;
-    }
-
-    .bottom-menu .buttons {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px; /* espace entre les deux boutons */
-      padding: 0 8px; /* <-- marge intérieure pour éviter qu’ils touchent les bords */
-    }
-
-    .bottom-menu .buttons button {
-      flex: 1 1 48%;
-      padding:12px 0;
-      border-radius:28px;
-      font-weight:700;
-      font-size:14px;
-      cursor:pointer;
-      border:0;
-      background:#000;
-      color:#fff;
-    }
-
-    .bottom-menu .buttons .receive {
-      white-space: normal;
-      line-height: 1.2;
-      max-width: 100%;
-      text-align: center;
-    }
-
-    .bottom-menu .links {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 8px;
-    }
-
-    .bottom-menu .links a {
-      text-decoration: none;
-      color: #111;
-      transition: 0.2s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .bottom-menu .links a img {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      margin-bottom: 4px;
-      object-fit: cover;
-    }
-
-    .bottom-menu .links a:hover { color: var(--accent); }
-
-    /* modal */
-    #contactModal{
-      display:none;
-      position:fixed;
-      top:0;left:0;width:100%;height:100%;
-      background:rgba(0,0,0,0.5);
-      align-items:center;justify-content:center;
-      z-index:10;overflow:auto
-    }
-    #contactModal .modal-content{
-      background:white;padding:24px;border-radius:12px;
-      max-width:400px;width:90%;position:relative;
-      box-shadow:var(--shadow);
-    }
-    #contactModal h3{margin-top:0;text-align:center;}
-    #contactModal label{display:block;margin-top:10px;font-weight:600;}
-    #contactModal input{width:100%;padding:8px;margin-top:4px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box;}
-    #contactModal button{margin-top:12px;padding:10px 18px;border:none;border-radius:8px;background:#2b6cff;color:white;font-weight:700;cursor:pointer;width:100%;}
-    #contactModal .close-btn{background:#aaa;margin-top:8px;}
-    #selectedContact{margin-top:12px;padding:8px;border:1px solid #ccc;border-radius:6px;background:#f7f7f7;}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Casino Test — Intégration Stripe (Sandbox)</title>
+<style>
+  :root{--bg:#f7f8fc;--card:#fff;--muted:#8b8f98;--accent:#000;--gold:#ffd166}
+  body{margin:0;font-family:Inter,Arial;background:var(--bg);color:#111;display:flex;justify-content:center;padding:18px}
+  .wrap{width:100%;max-width:420px}
+  .card{background:var(--card);border-radius:14px;padding:16px;box-shadow:0 6px 20px rgba(20,20,40,0.06)}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  .logo{width:34px;height:34px;border-radius:8px;overflow:hidden}
+  .logo img{width:100%;height:100%;object-fit:cover}
+  .balance{font-weight:800;font-size:28px;margin-top:4px}
+  .small{font-size:13px;color:var(--muted)}
+  .controls{display:flex;gap:8px;align-items:center;margin:12px 0}
+  input[type="number"]{padding:8px;border-radius:8px;border:1px solid #e6e8ef;width:120px}
+  button{background:#000;color:#fff;border:0;padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:700}
+  .slot{display:flex;gap:8px;justify-content:center;margin:12px 0}
+  .reel{width:84px;height:84px;border-radius:12px;background:#f3f4f9;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800}
+  .result{min-height:22px;margin-top:8px;font-weight:700}
+  .row{display:flex;gap:8px;align-items:center}
+  .muted{color:var(--muted)}
+  .footer{margin-top:12px;display:flex;justify-content:space-between;align-items:center}
+  .bottom-fixed{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:420px;padding:12px;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,0.08)}
+  .bottom-fixed .btns{display:flex;gap:10px}
+  .bottom-fixed button{flex:1;padding:12px;border-radius:28px}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:flex-end;justify-content:center;z-index:999}
+  .sheet{background:#fff;width:100%;max-width:420px;border-radius:18px 18px 0 0;padding:20px 18px}
+  .sheet h3{text-align:center;margin:0 0 12px 0;font-size:22px}
+  .sheet .actions{display:flex;justify-content:space-around;margin-top:12px}
+  .icon-circle{width:70px;height:70px;border-radius:35px;background:#f3f4f9;display:flex;align-items:center;justify-content:center}
+</style>
 </head>
 <body>
-<div class="wrap">
-  <div class="balance-card">
-    <div class="bal-top">
-      <div class="logo-circle">
-        <img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2477.jpg?v=1762027810" alt="Logo PayPal">
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <div class="logo"><img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2477.jpg?v=1762027810" alt="logo"></div>
+        <div>
+          <div class="small">Solde (test)</div>
+          <div id="balance" class="balance">0 €</div>
+        </div>
+        <div style="margin-left:auto" class="muted">Mode Sandbox</div>
+      </header>
+
+      <div class="controls">
+        <label class="small">Mise</label>
+        <input id="bet" type="number" value="100" min="1" max="10000">
+        <button id="spin">SPIN</button>
+        <button id="addCredits" style="background:#eee;color:#111;border-radius:10px;padding:8px 10px">+1000</button>
       </div>
-      <div class="balance-info">
-        <div class="small">Solde PayPal</div>
-        <div id="balance" class="balance-amount">750 000,00 €</div>
-        <div class="balance-sub">Disponible</div>
+
+      <div class="slot">
+        <div class="reel" id="r1">🍒</div>
+        <div class="reel" id="r2">🍋</div>
+        <div class="reel" id="r3">🔔</div>
+      </div>
+
+      <div id="result" class="result muted"></div>
+      <div class="footer muted"><div>RTP (simulé) ~94%</div><div>Historique ci-dessous</div></div>
+      <div id="log" style="margin-top:10px;max-height:180px;overflow:auto;background:#fafbff;padding:8px;border-radius:8px;font-size:13px"></div>
+    </div>
+  </div>
+
+  <!-- bottom bar with deposit (Checkout) and withdraw (simulate) -->
+  <div class="bottom-fixed">
+    <div class="btns">
+      <button id="depositBtn">Dépôt (Stripe test)</button>
+      <button id="receiveBtn">Recevoir (Retrait demo)</button>
+    </div>
+  </div>
+
+  <!-- slide up sheet (pour 'Recevoir des paiements') -->
+  <div id="sheetBackdrop" style="display:none" class="modal-backdrop" role="dialog" aria-hidden="true">
+    <div class="sheet">
+      <button id="closeSheet" style="float:right;border:0;background:transparent;font-size:20px">✕</button>
+      <h3>Moyens pour recevoir des paiements</h3>
+      <div class="actions">
+        <div style="text-align:center">
+          <div class="icon-circle">💸</div>
+          <div class="small" style="margin-top:8px">Demander de l'argent</div>
+        </div>
+        <div style="text-align:center">
+          <div class="icon-circle">🧾</div>
+          <div class="small" style="margin-top:8px">Envoyer une facture</div>
+        </div>
+        <div style="text-align:center">
+          <div class="icon-circle">🔳</div>
+          <div class="small" style="margin-top:8px">Afficher un QR code</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <h2>Activité récente</h2>
-  <div class="activity" id="activityList"></div>
-</div>
-
-<!-- Bloc bas fixe -->
-<div class="bottom-menu">
-  <div class="buttons">
-    <button class="pay" id="payerBtn">Payer</button>
-    <button class="receive">Recevoir des<br>Paiements</button>
-  </div>
-  <div class="links">
-    <a href="#"><img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2485.jpg?v=1762057479" alt="Accueil">Accueil</a>
-    <a href="#"><img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2485_5fb5771c-36c5-4916-b7a4-420fa68bf3d3.jpg?v=1762057532" alt="Clients">Clients</a>
-    <a href="#"><img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2485_685c231e-dc09-410f-97f1-60779ed13b73.jpg?v=1762057580" alt="Menu">Menu</a>
-  </div>
-</div>
-
-<!-- Modal -->
-<div id="contactModal">
-  <div class="modal-content">
-    <h3>Payer un contact</h3>
-    <label for="contactInput">Nom, Nom d’utilisateur, Email :</label>
-    <input type="text" id="contactInput" placeholder="Nom, Nom d’utilisateur, Email">
-    <button id="addContactBtn">Ajouter contact</button>
-    <div id="selectedContact">Aucun contact sélectionné</div>
-    <label for="amount">Somme à payer (€) :</label>
-    <input type="number" id="amount" placeholder="Entrer un montant">
-    <button id="payBtn">Payer</button>
-    <button class="close-btn" id="closeModal">Fermer</button>
-  </div>
-</div>
-
 <script>
-let balance = 750000.00;
-const transactions = [
-  {who:'Louisvuitton', date:'2 nov. 2025', note:'envoyé - reçu', amount:-18000.00, style:'gray'},
-  {who:'Sarah750199', date:'2 nov 2025', note:'envoyé - reçu', amount:-1000.00, style:'gray'}
-];
+/* frontend logic similaire à la demo précédente */
+const symbols = ['🍒','🍋','🔔','⭐','💎','7️⃣'];
+function pickRandom(){ return symbols[Math.floor(Math.random()*symbols.length)]; }
 
-function fmt(n){return n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
-const balanceEl = document.getElementById('balance');
-balanceEl.textContent = fmt(balance);
-const activityList = document.getElementById('activityList');
-function renderTransactions(){
-  activityList.innerHTML='';
-  transactions.forEach(tx=>{
-    const node=document.createElement('div');
-    node.className='txn';
-    node.innerHTML=`
-      <div class="meta">
-        <div class="profile-pic"><img src="https://cdn.shopify.com/s/files/1/0602/1857/3035/files/IMG_2487.jpg?v=1762058304" alt="User"></div>
-        <div class="desc">
-          <div class="who">${tx.who}</div>
-          <div class="when">${tx.date}</div>
-          <div class="small" style="margin-top:6px">${tx.note}</div>
-        </div>
-      </div>
-      <div class="amount ${tx.style}">${tx.amount>=0?'+':''}${fmt(tx.amount)}</div>`;
-    activityList.appendChild(node);
-  });
+function readBalance(){
+  const b = localStorage.getItem('realish_balance_v1');
+  return b ? Number(b) : 5000;
 }
-renderTransactions();
+function writeBalance(v){
+  localStorage.setItem('realish_balance_v1', String(Math.max(0, Math.floor(v))));
+  document.getElementById('balance').textContent = Number(localStorage.getItem('realish_balance_v1')).toLocaleString('fr-FR') + ' €';
+}
+function logLine(text){
+  const log = document.getElementById('log');
+  const el = document.createElement('div');
+  el.innerHTML = text;
+  log.prepend(el);
+  while (log.children.length > 120) log.removeChild(log.lastChild);
+}
+writeBalance(readBalance());
 
-// Modal logique
-const modal = document.getElementById('contactModal');
-const payerBtn = document.getElementById('payerBtn');
-const closeModal = document.getElementById('closeModal');
-const contactInput = document.getElementById('contactInput');
-const addContactBtn = document.getElementById('addContactBtn');
-const selectedContact = document.getElementById('selectedContact');
-const payBtn = document.getElementById('payBtn');
-const amountInput = document.getElementById('amount');
-const contacts = [];
-
-payerBtn.addEventListener('click',()=>{modal.style.display='flex';});
-closeModal.addEventListener('click',()=>{modal.style.display='none';});
-
-addContactBtn.addEventListener('click',()=>{
-  const value=contactInput.value.trim();
-  if(value){contacts.push(value);selectedContact.textContent=value;contactInput.value='';}
+document.getElementById('addCredits').addEventListener('click',()=>{
+  const b=readBalance()+1000;
+  writeBalance(b);
+  logLine('<em>+1000 crédits (demo)</em>');
 });
 
-payBtn.addEventListener('click',()=>{
-  const montant=parseFloat(amountInput.value);
-  if(!selectedContact.textContent || selectedContact.textContent==='Aucun contact sélectionné'){alert('Veuillez saisir un contact.');return;}
-  if(!montant || montant<=0){alert('Veuillez entrer une somme valide.');return;}
-  if(montant>balance){alert('Solde insuffisant !');return;}
-  balance -= montant;
-  balanceEl.textContent = fmt(balance);
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('fr-FR');
-  transactions.unshift({who:selectedContact.textContent, date:dateStr, note:'Paiement effectué', amount:-montant, style:'gray'});
-  renderTransactions();
-  amountInput.value='';
-  selectedContact.textContent='Aucun contact sélectionné';
-  modal.style.display='none';
+let spinning=false;
+document.getElementById('spin').addEventListener('click',()=>{
+  if (spinning) return;
+  spinning=true;
+  const bet = Math.max(1, Math.min(10000, Math.floor(Number(document.getElementById('bet').value)||0)));
+  let bal = readBalance();
+  if (bet > bal) { alert('Solde insuffisant'); spinning=false; return; }
+  bal -= bet; writeBalance(bal);
+  const spinD = 900, int=80, start=Date.now();
+  const r1=document.getElementById('r1'), r2=document.getElementById('r2'), r3=document.getElementById('r3');
+  const t = setInterval(()=>{
+    r1.textContent = pickRandom(); r2.textContent = pickRandom(); r3.textContent = pickRandom();
+    if (Date.now()-start > spinD){
+      clearInterval(t);
+      const s1 = pickRandom(), s2 = pickRandom(), s3 = pickRandom();
+      r1.textContent=s1; r2.textContent=s2; r3.textContent=s3;
+      evaluate([s1,s2,s3], bet);
+      spinning=false;
+    }
+  }, int);
 });
+
+function evaluate(arr, bet){
+  const [a,b,c]=arr;
+  let bal = readBalance();
+  let payout=0, msg='';
+  if (a===b && b===c){
+    const mult={'🍒':5,'🍋':6,'🔔':10,'⭐':20,'💎':50,'7️⃣':200};
+    payout = (mult[a]||5)*bet;
+    msg = `Jackpot ${a} x3 — Gagné +${payout} crédits`;
+  } else if (a===b||a===c||b===c){
+    payout = Math.floor(bet*1.2);
+    if ((a==='7️⃣'&&b==='7️⃣')||(a==='7️⃣'&&c==='7️⃣')||(b==='7️⃣'&&c==='7️⃣')) payout = Math.floor(bet*10);
+    msg = `Deux identiques — Gagné +${payout} crédits`;
+  } else {
+    msg = `Perdu -${bet} crédits`;
+  }
+  bal += payout; writeBalance(bal);
+  logLine(`<strong>${new Date().toLocaleTimeString()}</strong> — ${arr.join(' ')} — Mise ${bet} — ${payout>0?('+'+payout):'0'}`);
+  document.getElementById('result').textContent = msg;
+}
+
+/* ---------- Stripe deposit flow (frontend) ---------- */
+/*
+  Pour que ça fonctionne en réel test :
+  - Déploie le backend Node.js (server.js) plus haut, accessible publiquement (ngrok ou serveur)
+  - Dans .env du backend, mets BASE_URL = url publique (ex: https://abcd.ngrok.io)
+  - Mets STRIPE_SECRET_KEY à ta clé sk_test_...
+  - Dans la page ci-dessus, modifie API_BASE sur la ligne suivante pour pointer vers ton serveur
+*/
+const API_BASE = 'http://localhost:4242'; // <-- change ceci vers ton serveur (ngrok/host)
+document.getElementById('depositBtn').addEventListener('click', async ()=>{
+  try {
+    const amountEur = prompt('Montant à déposer en euros (ex: 10 pour 10€) :', '10');
+    if (!amountEur) return;
+    const cents = Math.max(100, Math.floor(Number(amountEur)*100));
+    // create checkout session on backend
+    const res = await fetch(API_BASE + '/create-checkout-session', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ amount: cents, clientReferenceId: 'demo_user_1' })
+    });
+    const data = await res.json();
+    if (data.url) {
+      // redirect user to Stripe Checkout (test)
+      window.location.href = data.url;
+    } else {
+      alert('Erreur création session: ' + (data.error || 'unknown'));
+      console.error(data);
+    }
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+    console.error(err);
+  }
+});
+
+/* After Stripe success page, you can implement success.html that calls /checkout-session?session_id=... and credits the user.
+   For demo, if you don't want server redirects, you can manually click +1000 after a successful test payment in your Stripe dashboard.
+*/
+
+/* ---------- Recevoir / sheet ---------- */
+const sheet = document.getElementById('sheetBackdrop');
+document.getElementById('receiveBtn').addEventListener('click', ()=> sheet.style.display='flex');
+document.getElementById('closeSheet').addEventListener('click', ()=> sheet.style.display='none');
 </script>
 </body>
 </html>

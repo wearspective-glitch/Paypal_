@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stack House Builder Stable</title>
+<title>Stack House Builder - Reset complet</title>
 <style>
 body {
   margin: 0;
@@ -62,13 +62,15 @@ body {
   box-shadow: inset 0 5px 5px rgba(0,0,0,0.5);
 }
 
-#score {
+#score, #best {
   position: absolute;
   top: 10px;
-  left: 10px;
   font-size: 24px;
   color: white;
 }
+
+#score { left: 10px; }
+#best { right: 10px; }
 
 #message {
   position: absolute;
@@ -86,20 +88,21 @@ body {
 <div id="game">
   <div id="ground"></div>
   <div id="score">0</div>
+  <div id="best">Best: 0</div>
   <div id="message">Game Over<br>Appuyez pour recommencer</div>
 </div>
 
 <script>
 const game = document.getElementById('game');
 const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
 const messageEl = document.getElementById('message');
-const groundHeight = 50;
 
 let blocks = [];
 let currentBlock = null;
 let isFalling = false;
 let score = 0;
-const blockSize = 80;
+let bestScore = 0;
 
 // Grue variables
 let craneX = window.innerWidth / 2;
@@ -109,36 +112,51 @@ let craneDirection = 1;
 // Défilement vertical
 let cameraY = 0;
 
+// Taille de base
+const baseSize = 80;
+let blockSize = baseSize;
+
+// --- Création de la base ---
+function createBase() {
+  const block = document.createElement('div');
+  block.classList.add('block');
+  block.style.width = blockSize + 'px';
+  block.style.height = blockSize + 'px';
+  block.style.left = (window.innerWidth / 2 - blockSize / 2) + 'px';
+  block.style.top = window.innerHeight - 50 - blockSize + 'px';
+  game.appendChild(block);
+  blocks.push(block);
+}
+
+// --- Création des blocs ---
 function createBlock() {
   const block = document.createElement('div');
   block.classList.add('block');
 
-  // Déterminer la position cible du bloc
-  let targetY;
-  if(blocks.length === 0){
-    // première maison sur le sol
-    targetY = window.innerHeight - groundHeight - blockSize;
-  } else {
-    // bloc suivant sur le dernier bloc
-    const lastBlock = blocks[blocks.length-1];
-    targetY = parseFloat(lastBlock.style.top) - blockSize;
-  }
+  // Augmentation progressive de la taille
+  blockSize = baseSize + blocks.length * 6;
+  block.style.width = blockSize + 'px';
+  block.style.height = blockSize + 'px';
 
-  block.style.top = 50 + cameraY + 'px'; // départ grue
+  // Position départ grue (au-dessus du dernier bloc)
+  let lastBlock = blocks[blocks.length - 1];
+  let targetY = parseFloat(lastBlock.style.top) - blockSize;
+  block.style.top = parseFloat(lastBlock.style.top) - 200 + 'px';
   block.style.left = craneX + 'px';
 
-  // ligne de la grue
+  // Ligne de grue
   const line = document.createElement('div');
   line.classList.add('line');
   line.style.left = craneX + blockSize/2 - 2 + 'px';
   game.appendChild(line);
 
   block.line = line;
-  block.targetY = targetY + cameraY;
+  block.targetY = targetY;
   game.appendChild(block);
   currentBlock = block;
 }
 
+// --- Animation grue ---
 function updateCrane() {
   if(!isFalling && currentBlock){
     craneX += craneSpeed * craneDirection;
@@ -149,6 +167,7 @@ function updateCrane() {
   requestAnimationFrame(updateCrane);
 }
 
+// --- Chute du bloc ---
 function fall() {
   if(!isFalling) return;
 
@@ -156,25 +175,18 @@ function fall() {
   top += 6;
   currentBlock.style.top = top + 'px';
 
-  // Vérifier alignement exact
-  if(blocks.length > 0){
-    const lastBlock = blocks[blocks.length-1];
-    const dx = Math.abs(parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left));
-    if(dx > 1 && top > window.innerHeight) {
-      gameOver();
-      return;
-    }
+  const lastBlock = blocks[blocks.length - 1];
+  const dx = Math.abs(parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left));
+
+  if(dx > 1 && top > window.innerHeight){
+    gameOver();
+    return;
   }
 
   if(top >= currentBlock.targetY){
-    // Vérifier alignement
-    if(blocks.length > 0){
-      const lastBlock = blocks[blocks.length-1];
-      const dx = Math.abs(parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left));
-      if(dx > 1){
-        gameOver();
-        return;
-      }
+    if(dx > 1){
+      gameOver();
+      return;
     }
 
     isFalling = false;
@@ -184,11 +196,15 @@ function fall() {
     score++;
     scoreEl.innerText = score;
 
+    // Mise à jour du meilleur score
+    if(score > bestScore){
+      bestScore = score;
+      bestEl.innerText = 'Best: ' + bestScore;
+    }
+
     // Déplacement caméra vers le haut
     cameraY += 6;
-    blocks.forEach(b => {
-      b.style.top = parseFloat(b.style.top) - 6 + 'px';
-    });
+    blocks.forEach(b => b.style.top = parseFloat(b.style.top) - 6 + 'px');
 
     createBlock();
   } else {
@@ -196,28 +212,33 @@ function fall() {
   }
 }
 
+// --- Game Over ---
 function gameOver(){
   isFalling = false;
   messageEl.style.display = 'block';
+  // Reset complet après courte pause
+  setTimeout(() => {
+    restartGame();
+  }, 1000);
 }
 
+// --- Redémarrage complet ---
 function restartGame(){
   blocks.forEach(b => b.remove());
   blocks = [];
   score = 0;
+  blockSize = baseSize;
   scoreEl.innerText = score;
   messageEl.style.display = 'none';
   craneX = window.innerWidth / 2;
   craneDirection = 1;
   cameraY = 0;
+  createBase();
   createBlock();
 }
 
+// --- Click ou touch ---
 game.addEventListener('click', () => {
-  if(messageEl.style.display === 'block'){
-    restartGame();
-    return;
-  }
   if(!isFalling){
     isFalling = true;
     fall();
@@ -229,7 +250,8 @@ game.addEventListener('touchstart', e => {
   game.click();
 });
 
-// Initialisation
+// --- Initialisation ---
+createBase();
 createBlock();
 updateCrane();
 </script>

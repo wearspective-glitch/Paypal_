@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stack House Builder Réaliste</title>
+<title>Stack House Builder Strict - Caméra Haut</title>
 <style>
 body {
   margin: 0;
@@ -29,7 +29,6 @@ body {
   border: 2px solid #654321;
   box-shadow: 0 5px 10px rgba(0,0,0,0.3);
   box-sizing: border-box;
-  transform-origin: center bottom;
 }
 
 .block::before, .block::after {
@@ -100,25 +99,25 @@ let blocks = [];
 let currentBlock = null;
 let isFalling = false;
 let score = 0;
-const blockSize = 80; // taille fixe
+const blockSize = 80;
 
 // Grue variables
 let craneX = window.innerWidth / 2;
 let craneSpeed = 2;
 let craneDirection = 1;
 
-// Décalage vertical pour suivre la construction
+// Décalage vertical pour suivre la construction vers le haut
 let cameraOffset = 0;
 
 function createBlock() {
   const block = document.createElement('div');
   block.classList.add('block');
 
-  // Hauteur cible : si bloc précédent existe, empiler dessus sinon sur le sol
-  let lastY = window.innerHeight - groundHeight - blockSize;
-  if (blocks.length > 0) {
-    const lastBlock = blocks[blocks.length - 1];
-    lastY = parseFloat(lastBlock.style.top) - blockSize;
+  // Position de la cible : sur le dernier bloc ou sur le sol
+  let targetY = window.innerHeight - groundHeight - blockSize;
+  if(blocks.length > 0){
+    const lastBlock = blocks[blocks.length-1];
+    targetY = parseFloat(lastBlock.style.top) - blockSize;
   }
 
   block.style.top = 50 + cameraOffset + 'px'; // départ grue
@@ -131,15 +130,15 @@ function createBlock() {
   game.appendChild(line);
 
   block.line = line;
-  block.targetY = lastY + cameraOffset;
+  block.targetY = targetY + cameraOffset;
   game.appendChild(block);
   currentBlock = block;
 }
 
 function updateCrane() {
-  if (!isFalling && currentBlock) {
+  if(!isFalling && currentBlock){
     craneX += craneSpeed * craneDirection;
-    if (craneX < 40 || craneX > window.innerWidth - 120) craneDirection *= -1;
+    if(craneX < 40 || craneX > window.innerWidth - 120) craneDirection *= -1;
     currentBlock.style.left = craneX + 'px';
     currentBlock.line.style.left = craneX + blockSize/2 - 2 + 'px';
   }
@@ -147,44 +146,43 @@ function updateCrane() {
 }
 
 function fall() {
-  if (!isFalling) return;
+  if(!isFalling) return;
 
   let top = parseFloat(currentBlock.style.top);
   top += 6;
   currentBlock.style.top = top + 'px';
 
-  // Effet rotation si bloc mal aligné
-  if (blocks.length > 0) {
-    const lastBlock = blocks[blocks.length - 1];
-    const dx = parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left);
-    if (Math.abs(dx) > blockSize) {
-      // bloc tombe dans le vide → Game Over
-      currentBlock.style.top = top + 'px';
-      currentBlock.style.transform = `translateX(-50%) rotate(${dx > 0 ? 20 : -20}deg)`;
-      requestAnimationFrame(fall);
-      if (top > window.innerHeight) gameOver();
+  // Vérifier alignement exact avec le dernier bloc
+  if(blocks.length > 0){
+    const lastBlock = blocks[blocks.length-1];
+    const dx = Math.abs(parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left));
+    if(dx > 1){ // bloc mal aligné → tombe dans le vide
+      if(top > window.innerHeight) gameOver();
       return;
-    } else if (Math.abs(dx) > blockSize * 0.5) {
-      // léger basculement
-      currentBlock.style.transform = `translateX(-50%) rotate(${dx * 0.2}deg)`;
     }
   }
 
-  // Atterrissage sur le bloc ou le sol
-  if (top >= currentBlock.targetY) {
+  // Atterrissage
+  if(top >= currentBlock.targetY){
+    // Vérifier alignement exact
+    if(blocks.length > 0){
+      const lastBlock = blocks[blocks.length-1];
+      const dx = Math.abs(parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left));
+      if(dx > 1){ 
+        gameOver();
+        return;
+      }
+    }
     isFalling = false;
     currentBlock.style.top = currentBlock.targetY + 'px';
-    currentBlock.style.transform = 'translateX(-50%) rotate(0deg)';
     blocks.push(currentBlock);
     currentBlock.line.remove();
     score++;
     scoreEl.innerText = score;
 
-    // Déplacer tous les blocs vers le haut pour suivre la construction
+    // Déplacer tous les blocs vers le haut (effet caméra qui monte)
     cameraOffset += 6;
-    blocks.forEach(b => {
-      b.style.top = parseFloat(b.style.top) - 6 + 'px';
-    });
+    blocks.forEach(b => b.style.top = parseFloat(b.style.top) - 6 + 'px');
 
     createBlock();
   } else {
@@ -192,12 +190,12 @@ function fall() {
   }
 }
 
-function gameOver() {
+function gameOver(){
   isFalling = false;
   messageEl.style.display = 'block';
 }
 
-function restartGame() {
+function restartGame(){
   blocks.forEach(b => b.remove());
   blocks = [];
   score = 0;
@@ -209,13 +207,12 @@ function restartGame() {
   createBlock();
 }
 
-// Click ou touch
 game.addEventListener('click', () => {
-  if (messageEl.style.display === 'block') {
+  if(messageEl.style.display === 'block'){
     restartGame();
     return;
   }
-  if (!isFalling) {
+  if(!isFalling){
     isFalling = true;
     fall();
   }

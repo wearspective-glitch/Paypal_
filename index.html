@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stack House Builder - Reset complet</title>
+<title>Simple Runner</title>
 <style>
 body {
   margin: 0;
   overflow: hidden;
-  background: linear-gradient(to top, #87ceeb 0%, #a0d8f1 100%);
-  touch-action: manipulation;
+  background: #87ceeb;
   font-family: sans-serif;
 }
 
@@ -18,67 +17,42 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  background: linear-gradient(to top, #87ceeb 0%, #a0d8f1 100%);
 }
 
-.block {
-  width: 80px;
-  height: 80px;
-  background: #8B4513;
+#player {
   position: absolute;
-  border-radius: 5px;
-  border: 2px solid #654321;
-  box-shadow: 0 5px 10px rgba(0,0,0,0.3);
-  box-sizing: border-box;
-}
-
-.block::before, .block::after {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  background: #add8e6;
-  border: 1px solid #333;
-  top: 20px;
-}
-
-.block::before { left: 10px; }
-.block::after { right: 10px; }
-
-.line {
-  width: 4px;
-  height: 60px;
-  background: black;
-  position: absolute;
-  top: 0;
-}
-
-#ground {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+  bottom: 50px;
+  left: 50px;
+  width: 50px;
   height: 50px;
-  background: #654321;
-  box-shadow: inset 0 5px 5px rgba(0,0,0,0.5);
+  background: #ff3333;
+  border-radius: 5px;
 }
 
-#score, #best {
+.obstacle {
+  position: absolute;
+  bottom: 50px;
+  width: 50px;
+  height: 50px;
+  background: #333;
+}
+
+#score {
   position: absolute;
   top: 10px;
-  font-size: 24px;
+  left: 10px;
   color: white;
+  font-size: 24px;
 }
-
-#score { left: 10px; }
-#best { right: 10px; }
 
 #message {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 36px;
   color: red;
+  font-size: 36px;
   display: none;
   text-align: center;
 }
@@ -86,174 +60,127 @@ body {
 </head>
 <body>
 <div id="game">
-  <div id="ground"></div>
+  <div id="player"></div>
   <div id="score">0</div>
-  <div id="best">Best: 0</div>
   <div id="message">Game Over<br>Appuyez pour recommencer</div>
 </div>
 
 <script>
 const game = document.getElementById('game');
+const player = document.getElementById('player');
 const scoreEl = document.getElementById('score');
-const bestEl = document.getElementById('best');
 const messageEl = document.getElementById('message');
 
-let blocks = [];
-let currentBlock = null;
-let isFalling = false;
+let obstacles = [];
 let score = 0;
-let bestScore = 0;
+let gameOverFlag = false;
+let jump = false;
+let jumpHeight = 0;
+const jumpSpeed = 8;
+const gravity = 4;
 
-// Grue variables
-let craneX = window.innerWidth / 2;
-let craneSpeed = 2;
-let craneDirection = 1;
-
-// Défilement vertical
-let cameraY = 0;
-
-// Taille de base
-const baseSize = 80;
-let blockSize = baseSize;
-
-// --- Création de la base ---
-function createBase() {
-  const block = document.createElement('div');
-  block.classList.add('block');
-  block.style.width = blockSize + 'px';
-  block.style.height = blockSize + 'px';
-  block.style.left = (window.innerWidth / 2 - blockSize / 2) + 'px';
-  block.style.top = window.innerHeight - 50 - blockSize + 'px';
-  game.appendChild(block);
-  blocks.push(block);
+// --- Créer obstacle ---
+function createObstacle() {
+  const obs = document.createElement('div');
+  obs.classList.add('obstacle');
+  obs.style.left = window.innerWidth + 'px';
+  game.appendChild(obs);
+  obstacles.push(obs);
 }
 
-// --- Création des blocs ---
-function createBlock() {
-  const block = document.createElement('div');
-  block.classList.add('block');
+// --- Boucle de jeu ---
+function gameLoop() {
+  if(gameOverFlag) return;
 
-  // Augmentation progressive de la taille
-  blockSize = baseSize + blocks.length * 6;
-  block.style.width = blockSize + 'px';
-  block.style.height = blockSize + 'px';
-
-  // Position départ grue (au-dessus du dernier bloc)
-  let lastBlock = blocks[blocks.length - 1];
-  let targetY = parseFloat(lastBlock.style.top) - blockSize;
-  block.style.top = parseFloat(lastBlock.style.top) - 200 + 'px';
-  block.style.left = craneX + 'px';
-
-  // Ligne de grue
-  const line = document.createElement('div');
-  line.classList.add('line');
-  line.style.left = craneX + blockSize/2 - 2 + 'px';
-  game.appendChild(line);
-
-  block.line = line;
-  block.targetY = targetY;
-  game.appendChild(block);
-  currentBlock = block;
-}
-
-// --- Animation grue ---
-function updateCrane() {
-  if(!isFalling && currentBlock){
-    craneX += craneSpeed * craneDirection;
-    if(craneX < 40 || craneX > window.innerWidth - 120) craneDirection *= -1;
-    currentBlock.style.left = craneX + 'px';
-    currentBlock.line.style.left = craneX + blockSize/2 - 2 + 'px';
+  // Gestion saut
+  if(jump){
+    jumpHeight += jumpSpeed;
+    if(jumpHeight >= 150) jump = false;
+  } else if(jumpHeight > 0){
+    jumpHeight -= gravity;
+    if(jumpHeight < 0) jumpHeight = 0;
   }
-  requestAnimationFrame(updateCrane);
-}
+  player.style.bottom = 50 + jumpHeight + 'px';
 
-// --- Chute du bloc ---
-function fall() {
-  if(!isFalling) return;
+  // Déplacer obstacles
+  for(let i = obstacles.length -1; i >=0; i--){
+    const obs = obstacles[i];
+    let x = parseFloat(obs.style.left);
+    x -= 8; // vitesse
+    obs.style.left = x + 'px';
 
-  let top = parseFloat(currentBlock.style.top);
-  top += 6;
-  currentBlock.style.top = top + 'px';
-
-  const lastBlock = blocks[blocks.length - 1];
-  const dx = Math.abs(parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left));
-
-  if(dx > 1 && top > window.innerHeight){
-    gameOver();
-    return;
-  }
-
-  if(top >= currentBlock.targetY){
-    if(dx > 1){
+    // Collision
+    const playerRect = player.getBoundingClientRect();
+    const obsRect = obs.getBoundingClientRect();
+    if(playerRect.left < obsRect.right &&
+       playerRect.right > obsRect.left &&
+       playerRect.bottom > obsRect.top &&
+       playerRect.top < obsRect.bottom){
       gameOver();
-      return;
     }
 
-    isFalling = false;
-    currentBlock.style.top = currentBlock.targetY + 'px';
-    blocks.push(currentBlock);
-    currentBlock.line.remove();
-    score++;
-    scoreEl.innerText = score;
-
-    // Mise à jour du meilleur score
-    if(score > bestScore){
-      bestScore = score;
-      bestEl.innerText = 'Best: ' + bestScore;
+    // Supprimer obstacles hors écran
+    if(x + 50 < 0){
+      obs.remove();
+      obstacles.splice(i,1);
+      score++;
+      scoreEl.innerText = score;
     }
-
-    // Déplacement caméra vers le haut
-    cameraY += 6;
-    blocks.forEach(b => b.style.top = parseFloat(b.style.top) - 6 + 'px');
-
-    createBlock();
-  } else {
-    requestAnimationFrame(fall);
   }
+
+  requestAnimationFrame(gameLoop);
 }
 
 // --- Game Over ---
 function gameOver(){
-  isFalling = false;
+  gameOverFlag = true;
   messageEl.style.display = 'block';
-  // Reset complet après courte pause
-  setTimeout(() => {
-    restartGame();
-  }, 1000);
 }
 
-// --- Redémarrage complet ---
+// --- Redémarrer ---
 function restartGame(){
-  blocks.forEach(b => b.remove());
-  blocks = [];
+  obstacles.forEach(o => o.remove());
+  obstacles = [];
   score = 0;
-  blockSize = baseSize;
   scoreEl.innerText = score;
+  jumpHeight = 0;
+  jump = false;
+  player.style.bottom = '50px';
   messageEl.style.display = 'none';
-  craneX = window.innerWidth / 2;
-  craneDirection = 1;
-  cameraY = 0;
-  createBase();
-  createBlock();
+  gameOverFlag = false;
 }
 
-// --- Click ou touch ---
-game.addEventListener('click', () => {
-  if(!isFalling){
-    isFalling = true;
-    fall();
+// --- Contrôles ---
+document.addEventListener('keydown', e => {
+  if(e.code === 'Space'){
+    if(!jump && !gameOverFlag) jump = true;
   }
 });
 
-game.addEventListener('touchstart', e => {
-  e.preventDefault();
-  game.click();
+document.addEventListener('click', () => {
+  if(gameOverFlag){
+    restartGame();
+  } else if(!jump){
+    jump = true;
+  }
 });
 
-// --- Initialisation ---
-createBase();
-createBlock();
-updateCrane();
+document.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if(gameOverFlag){
+    restartGame();
+  } else if(!jump){
+    jump = true;
+  }
+});
+
+// --- Génération obstacles ---
+setInterval(() => {
+  if(!gameOverFlag) createObstacle();
+}, 2000);
+
+// --- Lancer le jeu ---
+gameLoop();
 </script>
 </body>
 </html>

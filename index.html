@@ -26,6 +26,7 @@ body {
   background-image: url('https://upload.wikimedia.org/wikipedia/en/0/0d/Bart_Simpson_200px.png');
   background-size: cover;
   background-position: center;
+  bottom: 100px; /* aligné sur le sol */
 }
 
 .obstacle {
@@ -34,6 +35,7 @@ body {
   height: 60px;
   background-size: cover;
   background-position: center;
+  bottom: 100px; /* aligné sur le sol */
 }
 
 #score {
@@ -91,7 +93,7 @@ let score = 0;
 let gameOverFlag = false;
 let jump = false;
 let jumpHeight = 0;
-const jumpSpeed = 18; // plus haut pour Bart
+const jumpSpeed = 18;
 const gravity = 6;
 const groundOffset = 100;
 
@@ -117,12 +119,9 @@ function createObstacle() {
 
   obs.style.width = 60;
   obs.style.height = 60;
-
-  // plateforme aléatoire
-  const platformY = groundOffset + Math.floor(Math.random()*100);
-  obs.style.bottom = platformY + 'px';
-
+  obs.style.bottom = groundOffset + 'px'; // aligné sur le sol
   obs.style.left = window.innerWidth + 'px';
+
   game.appendChild(obs);
   obstacles.push(obs);
 }
@@ -145,7 +144,7 @@ function gameLoop() {
   for(let i = obstacles.length -1; i >=0; i--){
     const obs = obstacles[i];
     let x = parseFloat(obs.style.left);
-    x -= 8; // vitesse obstacles
+    x -= 8;
     obs.style.left = x + 'px';
 
     const playerRect = player.getBoundingClientRect();

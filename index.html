@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Run Stick - Score Temps</title>
+<title>Bart Run - Famille Simpson</title>
 <style>
 body {
   margin: 0;
@@ -21,17 +21,19 @@ body {
 
 #player {
   position: absolute;
-  width: 50px;
-  height: 50px;
-  background: red;
-  border-radius: 5px;
+  width: 60px;
+  height: 60px;
+  background-image: url('https://upload.wikimedia.org/wikipedia/en/0/0d/Bart_Simpson_200px.png');
+  background-size: cover;
+  background-position: center;
 }
 
 .obstacle {
   position: absolute;
-  width: 50px;
-  height: 50px;
-  background: gray;
+  width: 60px;
+  height: 60px;
+  background-size: cover;
+  background-position: center;
 }
 
 #score {
@@ -89,28 +91,38 @@ let score = 0;
 let gameOverFlag = false;
 let jump = false;
 let jumpHeight = 0;
-const jumpSpeed = 12;
+const jumpSpeed = 18; // plus haut pour Bart
 const gravity = 6;
-const groundOffset = 100; 
+const groundOffset = 100;
 
-// Temps pour score
 let timeElapsed = 0;
 let scoreInterval;
 
-// --- Création obstacles ---
+// Images obstacles (Famille Simpson sauf Bart)
+const simpsons = [
+  'https://upload.wikimedia.org/wikipedia/en/0/02/Homer_Simpson_2006.png',
+  'https://upload.wikimedia.org/wikipedia/en/0/0b/Marge_Simpson.png',
+  'https://upload.wikimedia.org/wikipedia/en/0/04/Lisa_Simpson.png',
+  'https://upload.wikimedia.org/wikipedia/en/e/ec/Maggie_Simpson.png'
+];
+
+// --- Créer obstacle ---
 function createObstacle() {
+  if(gameOverFlag) return;
   const obs = document.createElement('div');
   obs.classList.add('obstacle');
 
-  const typeColor = ['#555', '#777', '#999', '#aaa'];
-  const type = typeColor[Math.floor(Math.random()*typeColor.length)];
-  obs.style.background = type;
+  const img = simpsons[Math.floor(Math.random()*simpsons.length)];
+  obs.style.backgroundImage = `url(${img})`;
 
-  obs.style.width = 50 + Math.floor(Math.random()*50) + 'px';
-  obs.style.height = 50 + Math.floor(Math.random()*50) + 'px';
-  obs.style.bottom = groundOffset + 'px';
+  obs.style.width = 60;
+  obs.style.height = 60;
+
+  // plateforme aléatoire
+  const platformY = groundOffset + Math.floor(Math.random()*100);
+  obs.style.bottom = platformY + 'px';
+
   obs.style.left = window.innerWidth + 'px';
-
   game.appendChild(obs);
   obstacles.push(obs);
 }
@@ -122,7 +134,7 @@ function gameLoop() {
   // Gestion saut
   if(jump){
     jumpHeight += jumpSpeed;
-    if(jumpHeight >= 150) jump = false;
+    if(jumpHeight >= 200) jump = false;
   } else if(jumpHeight > 0){
     jumpHeight -= gravity;
     if(jumpHeight < 0) jumpHeight = 0;
@@ -133,7 +145,7 @@ function gameLoop() {
   for(let i = obstacles.length -1; i >=0; i--){
     const obs = obstacles[i];
     let x = parseFloat(obs.style.left);
-    x -= 8;
+    x -= 8; // vitesse obstacles
     obs.style.left = x + 'px';
 
     const playerRect = player.getBoundingClientRect();
@@ -155,25 +167,22 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// --- Score par temps ---
+// --- Score ---
 function startScore() {
   scoreInterval = setInterval(() => {
     timeElapsed++;
-    score += timeElapsed; // cumul 1+2+3+...
+    score += timeElapsed; 
     scoreEl.innerText = score;
 
-    // Changement fond et personnage
     if(score >= 150){
       document.body.style.background = 'white';
-      player.style.background = 'black';
     } else {
       document.body.style.background = 'black';
-      player.style.background = 'red';
     }
   }, 1000);
 }
 
-// --- Game over ---
+// --- Game Over ---
 function endGame(){
   gameOverFlag = true;
   clearInterval(scoreInterval);
@@ -195,9 +204,13 @@ function restartGame(){
   restartBtn.style.display = 'none';
   gameOverFlag = false;
   document.body.style.background = 'black';
-  player.style.background = 'red';
   gameLoop();
   startScore();
+
+  setTimeout(() => {
+    if(!gameOverFlag) createObstacle();
+    setInterval(() => { if(!gameOverFlag) createObstacle(); }, 1500);
+  }, 5000 + Math.random()*2000);
 }
 
 // --- Contrôles ---
@@ -216,15 +229,16 @@ document.addEventListener('touchstart', e => {
 
 restartBtn.addEventListener('click', restartGame);
 
-// --- Obstacles ---
-setInterval(() => {
-  if(!gameOverFlag) createObstacle();
-}, 1500);
-
 // --- Initialisation ---
 player.style.bottom = groundOffset + 'px';
 gameLoop();
 startScore();
+
+// Premier obstacle après 5-7 secondes
+setTimeout(() => {
+  if(!gameOverFlag) createObstacle();
+  setInterval(() => { if(!gameOverFlag) createObstacle(); }, 1500);
+}, 5000 + Math.random()*2000);
 </script>
 </body>
 </html>

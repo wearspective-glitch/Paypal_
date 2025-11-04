@@ -3,70 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jeu de Maison Mobile</title>
+<title>Stack House Builder</title>
 <style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: #87ceeb;
-    touch-action: manipulation; /* pour mobile */
-  }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: linear-gradient(to top, #87ceeb 0%, #a0d8f1 100%);
+  touch-action: manipulation;
+  font-family: sans-serif;
+}
 
-  #game {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    background: #87ceeb;
-  }
+#game {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
 
-  .block {
-    width: 80px;
-    height: 80px;
-    background: #8B4513;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    top: 50px;
-    border: 2px solid #654321;
-    border-radius: 4px;
-  }
+.block {
+  width: 80px;
+  height: 80px;
+  background: #8B4513;
+  position: absolute;
+  border-radius: 5px;
+  border: 2px solid #654321;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+  box-sizing: border-box;
+}
 
-  .line {
-    width: 4px;
-    height: 50px;
-    background: black;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    top: 0;
-  }
+.block::before, .block::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: #add8e6;
+  border: 1px solid #333;
+  top: 20px;
+}
 
-  #score {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 24px;
-    font-family: sans-serif;
-    color: white;
-  }
+.block::before { left: 10px; }
+.block::after { right: 10px; }
 
-  #message {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 36px;
-    font-family: sans-serif;
-    color: red;
-    display: none;
-    text-align: center;
-  }
+.line {
+  width: 4px;
+  height: 60px;
+  background: black;
+  position: absolute;
+  top: 0;
+}
+
+#ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  background: #654321;
+  box-shadow: inset 0 5px 5px rgba(0,0,0,0.5);
+}
+
+#score {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 24px;
+  color: white;
+}
+
+#message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 36px;
+  color: red;
+  display: none;
+  text-align: center;
+}
 </style>
 </head>
 <body>
 <div id="game">
-  <div class="line"></div>
-  <div class="block" id="currentBlock"></div>
+  <div id="ground"></div>
   <div id="score">0</div>
   <div id="message">Game Over<br>Appuyez pour recommencer</div>
 </div>
@@ -75,55 +92,86 @@
 const game = document.getElementById('game');
 const scoreEl = document.getElementById('score');
 const messageEl = document.getElementById('message');
+const groundHeight = 50;
 
 let blocks = [];
-let currentBlock = document.getElementById('currentBlock');
-let speed = 5; 
+let currentBlock = null;
 let isFalling = false;
 let score = 0;
 
-// Crée un nouveau bloc sur la grue
-function createNewBlock() {
-  const newBlock = document.createElement('div');
-  newBlock.classList.add('block');
-  newBlock.style.top = '50px';
-  game.appendChild(newBlock);
-  currentBlock = newBlock;
+// Grue variables
+let craneX = window.innerWidth / 2;
+let craneSpeed = 2;
+let craneDirection = 1;
+
+// Créer un nouveau bloc
+function createBlock() {
+  const block = document.createElement('div');
+  block.classList.add('block');
+  block.style.left = craneX + 'px';
+  block.style.top = '50px';
+  
+  // Ligne de la grue
+  const line = document.createElement('div');
+  line.classList.add('line');
+  line.style.left = craneX + 38 + 'px';
+  game.appendChild(line);
+
+  block.line = line;
+  game.appendChild(block);
+  currentBlock = block;
 }
 
-// Fonction de chute
+// Mouvement de la grue
+function updateCrane() {
+  if (!isFalling && currentBlock) {
+    craneX += craneSpeed * craneDirection;
+    if (craneX < 40 || craneX > window.innerWidth - 120) craneDirection *= -1;
+    currentBlock.style.left = craneX + 'px';
+    currentBlock.line.style.left = craneX + 38 + 'px';
+  }
+  requestAnimationFrame(updateCrane);
+}
+
+// Chute avec rotation légère
 function fall() {
   if (!isFalling) return;
 
-  let top = parseInt(currentBlock.style.top);
-  currentBlock.style.top = top + speed + 'px';
+  let top = parseFloat(currentBlock.style.top);
+  top += 6;
+  currentBlock.style.top = top + 'px';
 
+  currentBlock.style.transform = `translateX(-50%) rotate(${Math.sin(top/30)*5}deg)`;
+
+  const bottom = game.clientHeight - groundHeight;
   let lastBlock = blocks[blocks.length - 1];
-  let bottom = game.clientHeight;
 
   if (lastBlock) {
-    const lastTop = parseInt(lastBlock.style.top);
-    const lastLeft = parseInt(lastBlock.offsetLeft);
-    const currentLeft = parseInt(currentBlock.offsetLeft);
+    const lastTop = parseFloat(lastBlock.style.top);
+    const lastLeft = parseFloat(lastBlock.offsetLeft);
+    const currentLeft = parseFloat(currentBlock.offsetLeft);
 
-    if (top + 80 >= lastTop) { // bloc posé
-      // vérification si le bloc tombe à côté
+    if (top + 80 >= lastTop) {
       if (Math.abs(currentLeft - lastLeft) > 80) {
         gameOver();
         return;
       }
       isFalling = false;
+      currentBlock.style.top = lastTop - 2 + 'px';
       blocks.push(currentBlock);
+      currentBlock.line.remove();
       score++;
       scoreEl.innerText = score;
-      createNewBlock();
+      createBlock();
     }
-  } else if (top + 80 >= bottom - 10) { // sol
+  } else if (top + 80 >= bottom) {
     isFalling = false;
+    currentBlock.style.top = bottom - 80 + 'px';
     blocks.push(currentBlock);
+    currentBlock.line.remove();
     score++;
     scoreEl.innerText = score;
-    createNewBlock();
+    createBlock();
   }
 
   requestAnimationFrame(fall);
@@ -135,16 +183,19 @@ function gameOver() {
   messageEl.style.display = 'block';
 }
 
-// Recommencer le jeu
+// Recommencer
 function restartGame() {
   blocks.forEach(b => b.remove());
   blocks = [];
   score = 0;
   scoreEl.innerText = score;
   messageEl.style.display = 'none';
-  createNewBlock();
+  craneX = window.innerWidth / 2;
+  craneDirection = 1;
+  createBlock();
 }
 
+// Click ou touch
 game.addEventListener('click', () => {
   if (messageEl.style.display === 'block') {
     restartGame();
@@ -156,13 +207,14 @@ game.addEventListener('click', () => {
   }
 });
 
-game.addEventListener('touchstart', (e) => {
-  e.preventDefault(); // éviter le scroll
+game.addEventListener('touchstart', e => {
+  e.preventDefault();
   game.click();
 });
 
 // Initialisation
-blocks = [];
+createBlock();
+updateCrane();
 </script>
 </body>
 </html>

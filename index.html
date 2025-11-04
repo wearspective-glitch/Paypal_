@@ -104,13 +104,20 @@ let craneX = window.innerWidth / 2;
 let craneSpeed = 2;
 let craneDirection = 1;
 
-// Créer un nouveau bloc
+// Création d’un bloc au-dessus du dernier bloc ou sur le sol
 function createBlock() {
   const block = document.createElement('div');
   block.classList.add('block');
+
+  let lastY = window.innerHeight - groundHeight - 80; // hauteur du sol par défaut
+  if(blocks.length > 0){
+    const lastBlock = blocks[blocks.length - 1];
+    lastY = parseFloat(lastBlock.style.top) - 80; // placer le nouveau bloc au-dessus du dernier
+  }
+
+  block.style.top = '50px'; // départ grue
   block.style.left = craneX + 'px';
-  block.style.top = '50px';
-  
+
   // Ligne de la grue
   const line = document.createElement('div');
   line.classList.add('line');
@@ -118,11 +125,12 @@ function createBlock() {
   game.appendChild(line);
 
   block.line = line;
+  block.targetY = lastY; // position finale sur le stack
   game.appendChild(block);
   currentBlock = block;
 }
 
-// Mouvement de la grue
+// Mouvement grue
 function updateCrane() {
   if (!isFalling && currentBlock) {
     craneX += craneSpeed * craneDirection;
@@ -133,7 +141,7 @@ function updateCrane() {
   requestAnimationFrame(updateCrane);
 }
 
-// Chute avec rotation légère
+// Chute avec alignement
 function fall() {
   if (!isFalling) return;
 
@@ -143,38 +151,17 @@ function fall() {
 
   currentBlock.style.transform = `translateX(-50%) rotate(${Math.sin(top/30)*5}deg)`;
 
-  const bottom = game.clientHeight - groundHeight;
-  let lastBlock = blocks[blocks.length - 1];
-
-  if (lastBlock) {
-    const lastTop = parseFloat(lastBlock.style.top);
-    const lastLeft = parseFloat(lastBlock.offsetLeft);
-    const currentLeft = parseFloat(currentBlock.offsetLeft);
-
-    if (top + 80 >= lastTop) {
-      if (Math.abs(currentLeft - lastLeft) > 80) {
-        gameOver();
-        return;
-      }
-      isFalling = false;
-      currentBlock.style.top = lastTop - 2 + 'px';
-      blocks.push(currentBlock);
-      currentBlock.line.remove();
-      score++;
-      scoreEl.innerText = score;
-      createBlock();
-    }
-  } else if (top + 80 >= bottom) {
+  if(top >= currentBlock.targetY){
     isFalling = false;
-    currentBlock.style.top = bottom - 80 + 'px';
+    currentBlock.style.top = currentBlock.targetY + 'px';
     blocks.push(currentBlock);
     currentBlock.line.remove();
     score++;
     scoreEl.innerText = score;
     createBlock();
+  } else {
+    requestAnimationFrame(fall);
   }
-
-  requestAnimationFrame(fall);
 }
 
 // Game Over

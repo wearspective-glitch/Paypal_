@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stack House Builder Pro</title>
+<title>Stack House Builder Réaliste</title>
 <style>
 body {
   margin: 0;
@@ -29,7 +29,7 @@ body {
   border: 2px solid #654321;
   box-shadow: 0 5px 10px rgba(0,0,0,0.3);
   box-sizing: border-box;
-  transition: width 0.2s, height 0.2s;
+  transform-origin: center bottom;
 }
 
 .block::before, .block::after {
@@ -100,34 +100,31 @@ let blocks = [];
 let currentBlock = null;
 let isFalling = false;
 let score = 0;
-let blockSize = 80; // taille initiale
+const blockSize = 80; // taille fixe
 
 // Grue variables
 let craneX = window.innerWidth / 2;
 let craneSpeed = 2;
 let craneDirection = 1;
 
-// Offset vertical pour faire “monter la caméra”
+// Décalage vertical pour suivre la construction
 let cameraOffset = 0;
 
 function createBlock() {
   const block = document.createElement('div');
   block.classList.add('block');
 
-  // Augmente légèrement la taille du bloc à chaque étage
-  blockSize = 80 + blocks.length * 2;
-  block.style.width = blockSize + 'px';
-  block.style.height = blockSize + 'px';
-
+  // Hauteur cible : si bloc précédent existe, empiler dessus sinon sur le sol
   let lastY = window.innerHeight - groundHeight - blockSize;
-  if (blocks.length > 0){
+  if (blocks.length > 0) {
     const lastBlock = blocks[blocks.length - 1];
     lastY = parseFloat(lastBlock.style.top) - blockSize;
   }
 
-  block.style.top = 50 + cameraOffset + 'px';
+  block.style.top = 50 + cameraOffset + 'px'; // départ grue
   block.style.left = craneX + 'px';
 
+  // Ligne de la grue
   const line = document.createElement('div');
   line.classList.add('line');
   line.style.left = craneX + blockSize/2 - 2 + 'px';
@@ -155,17 +152,35 @@ function fall() {
   let top = parseFloat(currentBlock.style.top);
   top += 6;
   currentBlock.style.top = top + 'px';
-  currentBlock.style.transform = `translateX(-50%) rotate(${Math.sin(top/30)*5}deg)`;
 
-  if(top >= currentBlock.targetY){
+  // Effet rotation si bloc mal aligné
+  if (blocks.length > 0) {
+    const lastBlock = blocks[blocks.length - 1];
+    const dx = parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left);
+    if (Math.abs(dx) > blockSize) {
+      // bloc tombe dans le vide → Game Over
+      currentBlock.style.top = top + 'px';
+      currentBlock.style.transform = `translateX(-50%) rotate(${dx > 0 ? 20 : -20}deg)`;
+      requestAnimationFrame(fall);
+      if (top > window.innerHeight) gameOver();
+      return;
+    } else if (Math.abs(dx) > blockSize * 0.5) {
+      // léger basculement
+      currentBlock.style.transform = `translateX(-50%) rotate(${dx * 0.2}deg)`;
+    }
+  }
+
+  // Atterrissage sur le bloc ou le sol
+  if (top >= currentBlock.targetY) {
     isFalling = false;
     currentBlock.style.top = currentBlock.targetY + 'px';
+    currentBlock.style.transform = 'translateX(-50%) rotate(0deg)';
     blocks.push(currentBlock);
     currentBlock.line.remove();
     score++;
     scoreEl.innerText = score;
 
-    // Décaler tous les blocs vers le haut pour simuler caméra
+    // Déplacer tous les blocs vers le haut pour suivre la construction
     cameraOffset += 6;
     blocks.forEach(b => {
       b.style.top = parseFloat(b.style.top) - 6 + 'px';
@@ -186,7 +201,6 @@ function restartGame() {
   blocks.forEach(b => b.remove());
   blocks = [];
   score = 0;
-  blockSize = 80;
   scoreEl.innerText = score;
   messageEl.style.display = 'none';
   craneX = window.innerWidth / 2;
@@ -195,6 +209,7 @@ function restartGame() {
   createBlock();
 }
 
+// Click ou touch
 game.addEventListener('click', () => {
   if (messageEl.style.display === 'block') {
     restartGame();

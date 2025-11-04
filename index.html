@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stack House Builder Strict - Caméra Haut</title>
+<title>Stack House Builder Stable</title>
 <style>
 body {
   margin: 0;
@@ -106,31 +106,35 @@ let craneX = window.innerWidth / 2;
 let craneSpeed = 2;
 let craneDirection = 1;
 
-// Décalage vertical pour suivre la construction vers le haut
-let cameraOffset = 0;
+// Défilement vertical
+let cameraY = 0;
 
 function createBlock() {
   const block = document.createElement('div');
   block.classList.add('block');
 
-  // Position de la cible : sur le dernier bloc ou sur le sol
-  let targetY = window.innerHeight - groundHeight - blockSize;
-  if(blocks.length > 0){
+  // Déterminer la position cible du bloc
+  let targetY;
+  if(blocks.length === 0){
+    // première maison sur le sol
+    targetY = window.innerHeight - groundHeight - blockSize;
+  } else {
+    // bloc suivant sur le dernier bloc
     const lastBlock = blocks[blocks.length-1];
     targetY = parseFloat(lastBlock.style.top) - blockSize;
   }
 
-  block.style.top = 50 + cameraOffset + 'px'; // départ grue
+  block.style.top = 50 + cameraY + 'px'; // départ grue
   block.style.left = craneX + 'px';
 
-  // Ligne de la grue
+  // ligne de la grue
   const line = document.createElement('div');
   line.classList.add('line');
   line.style.left = craneX + blockSize/2 - 2 + 'px';
   game.appendChild(line);
 
   block.line = line;
-  block.targetY = targetY + cameraOffset;
+  block.targetY = targetY + cameraY;
   game.appendChild(block);
   currentBlock = block;
 }
@@ -152,27 +156,27 @@ function fall() {
   top += 6;
   currentBlock.style.top = top + 'px';
 
-  // Vérifier alignement exact avec le dernier bloc
+  // Vérifier alignement exact
   if(blocks.length > 0){
     const lastBlock = blocks[blocks.length-1];
     const dx = Math.abs(parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left));
-    if(dx > 1){ // bloc mal aligné → tombe dans le vide
-      if(top > window.innerHeight) gameOver();
+    if(dx > 1 && top > window.innerHeight) {
+      gameOver();
       return;
     }
   }
 
-  // Atterrissage
   if(top >= currentBlock.targetY){
-    // Vérifier alignement exact
+    // Vérifier alignement
     if(blocks.length > 0){
       const lastBlock = blocks[blocks.length-1];
       const dx = Math.abs(parseFloat(currentBlock.style.left) - parseFloat(lastBlock.style.left));
-      if(dx > 1){ 
+      if(dx > 1){
         gameOver();
         return;
       }
     }
+
     isFalling = false;
     currentBlock.style.top = currentBlock.targetY + 'px';
     blocks.push(currentBlock);
@@ -180,9 +184,11 @@ function fall() {
     score++;
     scoreEl.innerText = score;
 
-    // Déplacer tous les blocs vers le haut (effet caméra qui monte)
-    cameraOffset += 6;
-    blocks.forEach(b => b.style.top = parseFloat(b.style.top) - 6 + 'px');
+    // Déplacement caméra vers le haut
+    cameraY += 6;
+    blocks.forEach(b => {
+      b.style.top = parseFloat(b.style.top) - 6 + 'px';
+    });
 
     createBlock();
   } else {
@@ -203,7 +209,7 @@ function restartGame(){
   messageEl.style.display = 'none';
   craneX = window.innerWidth / 2;
   craneDirection = 1;
-  cameraOffset = 0;
+  cameraY = 0;
   createBlock();
 }
 
